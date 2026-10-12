@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUACI - Jelajah Sad Darsana</title>
+    
+    <!-- React & ReactDOM (Development versions for standalone HTML) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind Config for Custom Colors & Fonts -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'parchment': '#FDFBF7',
+                        'parchment-dark': '#F0EAD6',
+                        'hindu-maroon': '#800000',
+                        'hindu-gold': '#D4AF37',
+                        'hindu-brown': '#5C4033',
+                        'hindu-green': '#1A3636',
+                        'hindu-blue': '#0A192F',
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'serif': ['Merriweather', 'serif'],
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS for Game UI specific elements -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:ital,wght@0,300;0,700;1,300&display=swap');
+        
+        body {
+            background-color: #FDFBF7;
+            background-image: radial-gradient(#D4AF3720 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #2D2327;
+        }
+
+        .dark body {
+            background-color: #121212;
+            background-image: radial-gradient(#D4AF3710 1px, transparent 1px);
+            color: #E0E0E0;
+        }
+
+        /* Glassmorphism */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        .dark .glass-card {
+            background: rgba(30, 30, 30, 0.85);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .golden-border {
+            border: 2px solid #D4AF37;
+        }
+        
+        .ornament-bg {
+            background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 10 L90 50 L50 90 L10 50 Z" fill="none" stroke="%23D4AF37" stroke-width="1" stroke-opacity="0.2"/></svg>');
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #800000; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-sans transition-colors duration-300">
+    <div id="root" class="flex-grow flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- DATA STRUCTURES ---
+        
+        const PATH_IDS = ['nyaya', 'vaiseshika', 'samkhya', 'yoga', 'mimamsa', 'vedanta'];
+
+        const darsanaData = {
+            nyaya: {
+                id: 'nyaya', title: 'Nyaya', subtitle: '"Think before you believe."', icon: 'fa-scale-balanced', color: 'bg-hindu-blue',
+                sage: 'Rsi Gautama / Aksapada Gautama',
+                desc: 'Nyaya merupakan sistem filsafat yang memberikan perhatian besar terhadap logika, penalaran, dan pengetahuan yang benar. Fokus utamanya adalah membedakan pengetahuan benar dan keliru serta menarik kesimpulan berdasarkan alasan yang tepat.',
+                application: 'Sebelum mempercayai informasi di media sosial, periksa sumber, bukti, dan alasan yang mendukung.',
+                quiz: [
+                    { q: "Apa fokus utama dari filsafat Nyaya?", opts: ["Ritual keagamaan", "Logika dan penalaran", "Meditasi", "Penciptaan alam"], ans: 1, feedback: "Nyaya sangat menekankan logika untuk mencapai pengetahuan yang benar." },
+                    { q: "Siapa tokoh utama pendiri sistem Nyaya?", opts: ["Rsi Kanada", "Rsi Patanjali", "Rsi Gautama", "Rsi Jaimini"], ans: 2, feedback: "Rsi Gautama (Aksapada) adalah pendiri Nyaya." },
+                    { q: "Menurut Nyaya, bagaimana cara terbaik menghadapi berita viral yang belum jelas kebenarannya?", opts: ["Langsung share", "Percaya jika banyak yang share", "Abaikan saja", "Periksa sumber dan bukti logika"], ans: 3, feedback: "Nyaya mengajarkan kita untuk menganalisis dan membuktikan informasi." },
+                    { q: "Kata kunci yang paling mewakili Nyaya adalah...", opts: ["Pengendalian diri", "Kategori realitas", "Validitas pengetahuan", "Kewajiban moral"], ans: 2, feedback: "Validitas pengetahuan (Pramana) adalah inti Nyaya." }
+                ]
+            },
+            vaiseshika: {
+                id: 'vaiseshika', title: 'Vaiseshika', subtitle: '"Reality has categories."', icon: 'fa-atom', color: 'bg-hindu-brown',
+                sage: 'Rsi Kanada',
+                desc: 'Vaiseshika memberikan perhatian terhadap hakikat realitas dan berbagai kategori yang terdapat di dalamnya. Pemikiran ini membantu kita memahami bahwa alam semesta dapat dikaji, diklasifikasikan, dan dipahami secara sistematis (seperti sains purba).',
+                application: 'Digunakan saat mengelompokkan fenomena, melakukan penelitian sistematis, dan memahami unsur pembentuk benda.',
+                quiz: [
+                    { q: "Vaiseshika sangat erat kaitannya dengan...", opts: ["Kategorisasi realitas", "Pengendalian nafas", "Pembebasan jiwa", "Nyanyian suci"], ans: 0, feedback: "Vaiseshika membagi realitas ke dalam kategori (Padartha)." },
+                    { q: "Konsep dasar fisika modern mengenai partikel terkecil sejalan dengan ajaran siapa dalam Sad Darsana?", opts: ["Rsi Kapila", "Rsi Kanada (Vaiseshika)", "Rsi Badarayana", "Rsi Gautama"], ans: 1, feedback: "Rsi Kanada mencetuskan konsep 'Anu' atau atom sebagai partikel tak terbagi." },
+                    { q: "Apa manfaat praktis belajar Vaiseshika bagi siswa?", opts: ["Pandai menyanyi", "Mampu menganalisis dan mengklasifikasi masalah secara sistematis", "Bisa terbang", "Tidur lebih nyenyak"], ans: 1, feedback: "Vaiseshika melatih pola pikir yang terstruktur dan sistematis." },
+                    { q: "Vaiseshika memandang bahwa dunia ini nyata dan dapat dianalisis secara...", opts: ["Emosional", "Magis", "Objektif dan sistematis", "Subjektif"], ans: 2, feedback: "Pendekatan Vaiseshika sangat analitis dan objektif." }
+                ]
+            },
+            samkhya: {
+                id: 'samkhya', title: 'Samkhya', subtitle: '"Understand the difference between consciousness and nature."', icon: 'fa-leaf', color: 'bg-hindu-green',
+                sage: 'Rsi Kapila',
+                desc: 'Samkhya bersifat dualistik, mengajarkan dua realitas mutlak: Purusa (kesadaran murni/roh) dan Prakrti (materi/alam). Samkhya mengajarkan pemahaman perbedaan keduanya sebagai jalan menuju pembebasan (mengurangi keterikatan pada hal materi).',
+                application: 'Menyadari bahwa tubuh dan pikiran yang berubah-ubah adalah materi (Prakrti), sedangkan inti diri kita (Purusa) adalah kesadaran pengamat.',
+                quiz: [
+                    { q: "Dua konsep utama dalam Samkhya Darsana adalah...", opts: ["Brahman & Atman", "Purusa & Prakrti", "Yin & Yang", "Dharma & Karma"], ans: 1, feedback: "Samkhya didasarkan pada dualisme Purusa (kesadaran) dan Prakrti (materi)." },
+                    { q: "Menurut Samkhya, apa penyebab utama penderitaan manusia?", opts: ["Kurang harta", "Ketidakmampuan membedakan Purusa dan Prakrti", "Banyak musuh", "Nasib buruk"], ans: 1, feedback: "Identifikasi diri yang salah dengan materi (Prakrti) menyebabkan penderitaan." },
+                    { q: "Dalam diri manusia, emosi dan pikiran yang terus berubah termasuk ke dalam aspek...", opts: ["Purusa", "Prakrti", "Brahman", "Moksa"], ans: 1, feedback: "Segala yang berubah adalah Prakrti. Purusa adalah kesadaran murni yang statis." },
+                    { q: "Siapakah Rsi penyusun ajaran Samkhya?", opts: ["Rsi Kanada", "Rsi Jaimini", "Rsi Kapila", "Rsi Patanjali"], ans: 2, feedback: "Rsi Kapila adalah tokoh utama Samkhya." }
+                ]
+            },
+            yoga: {
+                id: 'yoga', title: 'Yoga', subtitle: '"Master the mind."', icon: 'fa-person-praying', color: 'bg-indigo-900',
+                sage: 'Rsi Patanjali',
+                desc: 'Yoga menekankan disiplin praktis dan pengendalian diri (fisik dan mental) untuk mencapai keadaan spiritual yang lebih tinggi. Yoga merupakan penerapan praktis dari teori Samkhya.',
+                application: 'Mengatur pikiran saat banyak tugas, menahan diri bermain gadget saat jam belajar, dan menjaga fokus.',
+                quiz: [
+                    { q: "Tujuan utama Yoga menurut Rsi Patanjali adalah...", opts: ["Kesehatan fisik saja", "Penghentian fluktuasi pikiran (Citta Vrtti Nirodha)", "Kekuatan magis", "Kekayaan materi"], ans: 1, feedback: "Inti Yoga adalah mengendalikan gelombang pikiran agar kesadaran murni terpancar." },
+                    { q: "Yoga sering dianggap sebagai pasangan praktis dari filsafat teori...", opts: ["Nyaya", "Vedanta", "Mimamsa", "Samkhya"], ans: 3, feedback: "Samkhya memberikan teori (Purusa-Prakrti), Yoga memberikan metode praktisnya." },
+                    { q: "Saat sedang belajar, teman mengajak mabar (main bareng) game. Tindakan yang mencerminkan ajaran Yoga adalah...", opts: ["Ikut main sebentar", "Marah pada teman", "Menolak halus dan fokus mengendalikan keinginan untuk main", "Menangis"], ans: 2, feedback: "Yoga mengajarkan disiplin (Tapas) dan pengendalian diri dari distraksi." },
+                    { q: "Yoga Sutra disusun oleh...", opts: ["Rsi Patanjali", "Rsi Vyasa", "Rsi Kanada", "Rsi Gautama"], ans: 0, feedback: "Karya utama Yoga adalah Yoga Sutra oleh Rsi Patanjali." }
+                ]
+            },
+            mimamsa: {
+                id: 'mimamsa', title: 'Mimamsa', subtitle: '"What should I do?"', icon: 'fa-fire-flame-curved', color: 'bg-hindu-maroon',
+                sage: 'Rsi Jaimini',
+                desc: 'Mimamsa fokus pada analisis kritis teks-teks Weda, khususnya mengenai kewajiban (Dharma) dan pelaksanaan tindakan ritual/keagamaan. Mengajarkan pentingnya menjalankan kewajiban dengan landasan yang benar.',
+                application: 'Melaksanakan kewajiban sebagai pelajar, menghormati orang tua, dan mengerjakan tugas dengan tanggung jawab.',
+                quiz: [
+                    { q: "Mimamsa (Purva Mimamsa) sangat menekankan pada konsep...", opts: ["Meditasi diam", "Dharma (Kewajiban) dan ritual", "Penelitian atom", "Penyatuan Atman"], ans: 1, feedback: "Mimamsa berfokus pada tindakan yang benar (Karma Kanda) sesuai Weda." },
+                    { q: "Jika seorang pelajar mengerjakan PR dengan sungguh-sungguh karena menyadari itu adalah kewajibannya, ia menerapkan prinsip...", opts: ["Yoga", "Vaiseshika", "Mimamsa", "Vedanta"], ans: 2, feedback: "Melaksanakan kewajiban (Dharma) di posisi kita saat ini adalah ajaran Mimamsa." },
+                    { q: "Sumber otoritas tertinggi bagi filsafat Mimamsa dalam menentukan tindakan yang benar adalah...", opts: ["Logika semata", "Weda", "Pendapat masyarakat", "Pengalaman pribadi"], ans: 1, feedback: "Mimamsa sangat bergantung pada teks suci Weda untuk aturan ritual/kewajiban." },
+                    { q: "Siapa penyusun Mimamsa Sutra?", opts: ["Rsi Jaimini", "Rsi Kapila", "Rsi Badarayana", "Rsi Patanjali"], ans: 0, feedback: "Rsi Jaimini adalah tokoh utama Purva Mimamsa." }
+                ]
+            },
+            vedanta: {
+                id: 'vedanta', title: 'Vedanta', subtitle: '"Know the self. Seek the ultimate reality."', icon: 'fa-om', color: 'bg-hindu-gold',
+                sage: 'Rsi Badarayana / Vyasa (dan pemikir berikutnya seperti Sankaracharya)',
+                desc: 'Vedanta (akhir Weda) berkaitan dengan ajaran Upanisad. Membahas realitas tertinggi (Brahman), jiwa individu (Atman), dan bagaimana Atman dapat bersatu kembali atau menyadari identitasnya dengan Brahman untuk mencapai pembebasan (Moksa).',
+                application: 'Merefleksikan hakikat diri, tujuan hidup sesungguhnya, dan melihat kesatuan di balik perbedaan duniawi.',
+                quiz: [
+                    { q: "Vedanta secara harfiah berarti...", opts: ["Awal Weda", "Pertengahan Weda", "Akhir/Puncak Weda", "Buku Ritual"], ans: 2, feedback: "Vedanta merujuk pada bagian akhir Weda (Upanisad) yang berisi pengetahuan tertinggi." },
+                    { q: "Konsep sentral dalam Vedanta adalah hubungan antara...", opts: ["Purusa dan Prakrti", "Atman (Jiwa) dan Brahman (Tuhan/Realitas Tertinggi)", "Dunia dan Atom", "Logika dan Fakta"], ans: 1, feedback: "Vedanta mencari pemahaman tentang kesatuan Atman dan Brahman." },
+                    { q: "Menurut Vedanta (khususnya Advaita), apa hakikat diri manusia yang sebenarnya?", opts: ["Tubuh fisik", "Pikiran dan emosi", "Atman yang suci dan kekal", "Kekayaan yang dimiliki"], ans: 2, feedback: "Diri sejati bukan raga/pikiran, melainkan Atman." },
+                    { q: "Ketika kamu menyadari bahwa di balik semua perbedaan warna kulit dan suku terdapat jiwa yang sama, kamu menerapkan pandangan...", opts: ["Mimamsa", "Nyaya", "Vaiseshika", "Vedanta"], ans: 3, feedback: "Vedanta mengajarkan kesatuan esensial (Brahman) di balik keragaman wujud." }
+                ]
+            }
+        };
+
+        const finalQuestData = [
+            { id: 1, path: 'nyaya', q: "Kasus: Sebuah broadcast WA mengatakan 'Makan buah X menyembuhkan segala penyakit' tanpa link jurnal medis. Berdasarkan Nyaya, langkah pertama yang benar adalah...", opts: ["Bagikan ke grup keluarga agar semua sehat", "Gunakan Pratyaksha (pengamatan) dan Anumana (inferensi logika) untuk mengecek sumber klaim tersebut", "Abaikan karena semua broadcast pasti bohong", "Marahi pengirim pesan"], ans: 1 },
+            { id: 2, path: 'vaiseshika', q: "Jika kita ingin meneliti struktur zat buah X tersebut di laboratorium, memilah unsurnya menjadi kategori, kita menggunakan pola pikir...", opts: ["Nyaya", "Vaiseshika", "Yoga", "Mimamsa"], ans: 1 },
+            { id: 3, path: 'samkhya', q: "Kasus: Setelah membaca komentar negatif di medsos, kamu merasa sangat sedih. Menurut Samkhya, kesedihan ini terjadi karena...", opts: ["Orang lain memang jahat", "Kamu mengidentifikasikan dirimu (Purusa) dengan fluktuasi pikiran/emosi (Prakrti)", "Kamu kurang ibadah", "Karma masa lalu"], ans: 1 },
+            { id: 4, path: 'yoga', q: "Untuk mengatasi emosi negatif tersebut, tindakan mengendalikan nafas (Pranayama) dan menarik indria dari objek luar (Pratyahara) diajarkan oleh Darsana...", opts: ["Yoga", "Mimamsa", "Nyaya", "Vaiseshika"], ans: 0 },
+            { id: 5, path: 'mimamsa', q: "Kasus: Besok ada ujian penting, tapi malam ini ada episode terakhir serial favoritmu. Mengutamakan belajar karena menyadari statusmu sebagai pelajar adalah pengamalan dari...", opts: ["Vedanta (Mencari Tuhan)", "Mimamsa (Menjalankan Dharma/Kewajiban)", "Samkhya (Menghindari Prakrti)", "Vaiseshika (Menganalisis film)"], ans: 1 },
+            { id: 6, path: 'vedanta', q: "Saat merenungkan bahwa kegagalan ujian bukanlah akhir dari segalanya, karena inti sejatimu (Atman) tidak tersentuh oleh nilai rapor, kamu sedang mempraktikkan filosofi...", opts: ["Vedanta", "Nyaya", "Yoga", "Mimamsa"], ans: 0 },
+            { id: 7, type: 'general', q: "Sad Darsana termasuk dalam kelompok filsafat Astika. Apa arti Astika?", opts: ["Menolak eksistensi Tuhan", "Menerima otoritas Weda sebagai sumber kebenaran", "Aliran filsafat modern", "Meyakini ketiadaan jiwa"], ans: 1 },
+            { id: 8, type: 'general', q: "Aliran manakah yang terkenal dengan teori atomismenya (Anu)?", opts: ["Samkhya", "Yoga", "Vaiseshika", "Mimamsa"], ans: 2 },
+            { id: 9, type: 'general', q: "Manakah pasangan filsafat yang sering disebut sebagai sistem yang saling melengkapi (teori dan praktik)?", opts: ["Nyaya & Vaiseshika", "Samkhya & Yoga", "Mimamsa & Vedanta", "Semua benar"], ans: 3 }, // Actually all are pairs, but let's make the answer "Semua benar" to be pedagogical, or specifically Samkhya-Yoga. Let's stick to Samkhya & Yoga as the most famous practical pair. Wait, standard pairing is Nyaya-Vaiseshika, Samkhya-Yoga, Mimamsa-Vedanta. So "Semua benar" is academically accurate.
+            { id: 10, type: 'general', q: "Mempelajari Darsana bertujuan untuk...", opts: ["Menjadi sakti mandraguna", "Menghafal nama-nama dewa", "Meningkatkan kemampuan berpikir kritis, memahami realitas, dan mencapai tujuan spiritual", "Hanya lulus ujian agama Hindu"], ans: 2 }
+        ];
+
+        // --- COMPONENTS ---
+
+        const Button = ({ children, onClick, variant = 'primary', className = '', disabled=false }) => {
+            const baseStyle = "px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg flex items-center justify-center gap-2 transform active:scale-95";
+            const variants = {
+                primary: "bg-hindu-maroon text-parchment hover:bg-red-900 border border-red-700 disabled:opacity-50",
+                secondary: "bg-hindu-gold text-hindu-brown hover:bg-yellow-500 disabled:opacity-50",
+                outline: "bg-transparent border-2 border-hindu-maroon text-hindu-maroon hover:bg-hindu-maroon hover:text-parchment dark:border-hindu-gold dark:text-hindu-gold dark:hover:bg-hindu-gold dark:hover:text-hindu-brown",
+                game: "bg-gradient-to-r from-hindu-green to-teal-800 text-white hover:from-teal-800 hover:to-hindu-green border-2 border-teal-300"
+            };
+            return (
+                <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>
+                    {children}
+                </button>
+            );
+        };
+
+        const Card = ({ children, className = '' }) => (
+            <div className={`glass-card p-6 md:p-8 rounded-2xl ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Badge = ({ title, icon, earned, color }) => (
+            <div className={`flex flex-col items-center p-3 rounded-xl transition-all duration-500 ${earned ? color + ' text-white scale-100 shadow-[0_0_15px_rgba(212,175,55,0.5)]' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 grayscale scale-90'}`}>
+                <i className={`fa-solid ${icon} text-3xl mb-2`}></i>
+                <span className="text-xs font-bold text-center w-full truncate">{title}</span>
+            </div>
+        );
+
+        const ProgressBar = ({ percent, colorClass = "bg-hindu-gold" }) => (
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2 overflow-hidden border border-gray-300 dark:border-gray-600">
+                <div className={`${colorClass} h-3 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percent}%` }}></div>
+            </div>
+        );
+
+        const Toast = ({ message, type, show }) => {
+            if (!show) return null;
+            const bg = type === 'success' ? 'bg-green-600' : type === 'xp' ? 'bg-hindu-gold text-hindu-brown' : 'bg-hindu-maroon';
+            return (
+                <div className={`fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full text-white font-bold shadow-xl flex items-center gap-2 animate-bounce ${bg}`}>
+                    <i className={`fa-solid ${type === 'xp' ? 'fa-star' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}`}></i>
+                    {message}
+                </div>
+            );
+        };
+
+        const Navbar = ({ setView, xp, darkMode, toggleDarkMode }) => {
+            const [menuOpen, setMenuOpen] = useState(false);
+            const navItems = [
+                { id: 'HOME', label: 'Beranda' },
+                { id: 'INSTRUCTIONS', label: 'Petunjuk' },
+                { id: 'OBJECTIVES', label: 'Tujuan' },
+                { id: 'MAP', label: 'Peta Sad Darsana' },
+                { id: 'RESULTS', label: 'Hasil' },
+            ];
+
+            return (
+                <nav className="sticky top-0 z-40 glass-card rounded-none border-t-0 border-l-0 border-r-0 border-b border-hindu-gold/30">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between h-16">
+                            <div className="flex items-center gap-4">
+                                <span className="font-serif font-bold text-2xl tracking-wider text-hindu-maroon dark:text-hindu-gold cursor-pointer" onClick={() => setView('HOME')}>
+                                    KUACI
+                                </span>
+                                <div className="hidden md:flex space-x-1 ml-6">
+                                    {navItems.map(item => (
+                                        <button key={item.id} onClick={() => setView(item.id)} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition">
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center bg-hindu-gold text-hindu-brown px-3 py-1 rounded-full font-bold shadow-sm shadow-yellow-500/50">
+                                    <i className="fa-solid fa-brain mr-2"></i> XP {xp}
+                                </div>
+                                <button onClick={toggleDarkMode} className="text-xl p-2 hover:bg-black/5 rounded-full w-10 h-10 flex items-center justify-center">
+                                    <i className={`fa-solid ${darkMode ? 'fa-sun text-yellow-400' : 'fa-moon text-indigo-900'}`}></i>
+                                </button>
+                                <button className="md:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)}>
+                                    <i className="fa-solid fa-bars"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Mobile Menu */}
+                    {menuOpen && (
+                        <div className="md:hidden glass-card absolute w-full border-b border-hindu-gold/30">
+                            <div className="px-2 pt-2 pb-3 space-y-1">
+                                {navItems.map(item => (
+                                    <button key={item.id} onClick={() => { setView(item.id); setMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-black/5">
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+
+        const HomeView = ({ setView }) => (
+            <div className="flex-grow flex flex-col items-center justify-center p-6 text-center animate-fade-in relative overflow-hidden">
+                <div className="absolute inset-0 ornament-bg opacity-30 z-0"></div>
+                <div className="relative z-10 flex flex-col items-center max-w-3xl">
+                    <div className="w-24 h-24 bg-hindu-maroon rounded-full flex items-center justify-center mb-6 shadow-2xl animate-float golden-border">
+                        <i className="fa-solid fa-om text-5xl text-parchment"></i>
+                    </div>
+                    <h1 className="text-5xl md:text-7xl font-serif font-bold text-hindu-maroon dark:text-hindu-gold mb-4 tracking-tight drop-shadow-md">
+                        KUACI
+                    </h1>
+                    <h2 className="text-2xl md:text-3xl font-semibold mb-2">Jelajah Sad Darsana</h2>
+                    <p className="italic text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 font-serif">
+                        "Six Paths. Six Perspectives. One Journey."
+                    </p>
+                    <p className="text-lg md:text-xl mb-10 leading-relaxed">
+                        Sebuah perjalanan interaktif untuk mengenal Darsana, memahami enam aliran filsafat Hindu, menguji pemahaman, dan menghubungkan filsafat dengan kehidupan sehari-hari di era modern.
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                        <Button onClick={() => setView('DARSANA_INTRO')} className="text-lg py-4 px-8">
+                            <i className="fa-solid fa-play"></i> MULAI PETUALANGAN
+                        </Button>
+                        <Button variant="outline" onClick={() => setView('ABOUT')} className="text-lg">
+                            <i className="fa-solid fa-users"></i> TENTANG KUACI
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const InfoPage = ({ title, icon, children, onNext, nextLabel = "Selanjutnya" }) => (
+            <div className="max-w-4xl mx-auto p-6 my-8 animate-slide-up w-full">
+                <Card>
+                    <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div className="w-12 h-12 bg-hindu-gold text-white rounded-full flex items-center justify-center text-2xl shadow-md">
+                            <i className={`fa-solid ${icon}`}></i>
+                        </div>
+                        <h2 className="text-3xl font-serif font-bold text-hindu-maroon dark:text-white">{title}</h2>
+                    </div>
+                    <div className="prose dark:prose-invert max-w-none text-lg leading-relaxed">
+                        {children}
+                    </div>
+                    {onNext && (
+                        <div className="mt-8 flex justify-end">
+                            <Button onClick={onNext}>{nextLabel} <i className="fa-solid fa-arrow-right"></i></Button>
+                        </div>
+                    )}
+                </Card>
+            </div>
+        );
+
+        const AstikaNastikaGame = ({ onComplete }) => {
+            const [completed, setCompleted] = useState(false);
+            const [feedback, setFeedback] = useState("");
+            
+            const checkAnswer = (answer) => {
+                if (answer === 'astika') {
+                    setFeedback("✅ TEPAT! Keenam aliran Sad Darsana (Nyaya, Vaiseshika, Samkhya, Yoga, Mimamsa, Vedanta) termasuk kelompok ASTIKA karena mengakui otoritas Weda.");
+                    setCompleted(true);
+                    onComplete(); // Award XP
+                } else {
+                    setFeedback("❌ BELUM TEPAT. Nastika menolak otoritas Weda (seperti Carvaka, Buddha, Jaina). Sad Darsana mengakui Weda.");
+                }
+            };
+
+            return (
+                <div className="mt-6 p-6 border-2 border-dashed border-hindu-gold rounded-xl bg-yellow-50 dark:bg-yellow-900/20">
+                    <h3 className="text-xl font-bold mb-4 text-center">Tantangan Klasifikasi</h3>
+                    <p className="mb-4 text-center">Berdasarkan penjelasan di atas, Sad Darsana (enam sistem yang akan kita pelajari) termasuk ke dalam kelompok mana?</p>
+                    <div className="flex justify-center gap-4 mb-4">
+                        <Button variant="outline" onClick={() => checkAnswer('astika')}>Kelompok ASTIKA</Button>
+                        <Button variant="outline" onClick={() => checkAnswer('nastika')}>Kelompok NASTIKA</Button>
+                    </div>
+                    {feedback && (
+                        <div className={`p-4 rounded-lg font-bold text-center ${completed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {feedback}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const MapView = ({ progress, setView, state }) => {
+            const allComplete = PATH_IDS.every(id => state.completedPaths.includes(id));
+
+            return (
+                <div className="flex-grow p-4 md:p-8 flex flex-col items-center">
+                    <h2 className="text-4xl font-serif font-bold text-center mb-2">🗺️ Peta Sad Darsana</h2>
+                    <p className="text-center text-gray-600 dark:text-gray-300 mb-8">Pilih gerbang untuk memulai eksplorasi pengetahuanmu.</p>
+                    
+                    {/* Overall Progress */}
+                    <div className="w-full max-w-3xl mb-12">
+                        <div className="flex justify-between text-sm font-bold mb-1">
+                            <span>Total Perjalanan</span>
+                            <span>{Math.round(progress)}%</span>
+                        </div>
+                        <ProgressBar percent={progress} colorClass="bg-gradient-to-r from-hindu-maroon to-hindu-gold" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full relative">
+                        {/* Connecting Lines (Decorative for desktop) */}
+                        <div className="hidden lg:block absolute inset-0 pointer-events-none" style={{ zIndex: -1 }}>
+                            <svg className="w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="16%" y1="20%" x2="50%" y2="50%" stroke="#D4AF37" strokeWidth="4" />
+                                <line x1="50%" y1="20%" x2="50%" y2="50%" stroke="#D4AF37" strokeWidth="4" />
+                                <line x1="83%" y1="20%" x2="50%" y2="50%" stroke="#D4AF37" strokeWidth="4" />
+                                <line x1="16%" y1="80%" x2="50%" y2="50%" stroke="#D4AF37" strokeWidth="4" />
+                                <line x1="50%" y1="80%" x2="50%" y2="50%" stroke="#D4AF37" strokeWidth="4" />
+                                <line x1="83%" y1="80%" x2="50%" y2="50%" stroke="#D4AF37" strokeWidth="4" />
+                            </svg>
+                        </div>
+
+                        {PATH_IDS.map(id => {
+                            const data = darsanaData[id];
+                            const isCompleted = state.completedPaths.includes(id);
+                            return (
+                                <div key={id} onClick={() => setView(`PATH_${id.toUpperCase()}`)} 
+                                     className={`glass-card p-6 rounded-2xl cursor-pointer transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 ${isCompleted ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-transparent hover:border-hindu-gold'}`}>
+                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl text-white mb-4 shadow-lg ${data.color}`}>
+                                        <i className={`fa-solid ${data.icon}`}></i>
+                                    </div>
+                                    <h3 className="text-2xl font-bold font-serif mb-1 uppercase tracking-wider">{data.title}</h3>
+                                    <p className="text-sm italic text-gray-600 dark:text-gray-400 mb-4">{data.subtitle}</p>
+                                    <div className="mt-auto">
+                                        <div className="flex justify-between text-xs mb-1">
+                                            <span>Progress</span>
+                                            <span>{isCompleted ? '100%' : '0%'}</span>
+                                        </div>
+                                        <ProgressBar percent={isCompleted ? 100 : 0} colorClass={isCompleted ? 'bg-green-500' : 'bg-gray-400'} />
+                                    </div>
+                                    {isCompleted && <div className="absolute top-4 right-4 text-green-500 text-2xl animate-pulse-slow"><i className="fa-solid fa-circle-check"></i></div>}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Final Quest Unlocker */}
+                    <div className="mt-16 w-full max-w-md text-center">
+                        <Card className={`border-4 ${allComplete ? 'border-hindu-gold shadow-[0_0_30px_rgba(212,175,55,0.5)]' : 'border-gray-400 opacity-70'}`}>
+                            <i className={`fa-solid text-5xl mb-4 ${allComplete ? 'fa-unlock text-hindu-gold animate-bounce' : 'fa-lock text-gray-500'}`}></i>
+                            <h3 className="text-2xl font-bold font-serif mb-2">⚔️ FINAL QUEST</h3>
+                            <p className="mb-6 text-sm">
+                                {allComplete ? "Enam perspektif telah kamu jelajahi. Sekarang buktikan pemahamanmu dalam tantangan terakhir!" : "Jelajahi keenam gerbang terlebih dahulu untuk membuka tantangan akhir."}
+                            </p>
+                            <Button variant={allComplete ? 'primary' : 'outline'} disabled={!allComplete} onClick={() => setView('FINAL_QUEST')} className="w-full">
+                                {allComplete ? "HADAPI TANTANGAN" : "🔒 TERKUNCI"}
+                            </Button>
+                        </Card>
+                    </div>
+                </div>
+            );
+        };
+
+        const QuizEngine = ({ questions, onComplete, isFinal = false }) => {
+            const [currentQ, setCurrentQ] = useState(0);
+            const [score, setScore] = useState(0);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [selectedOpt, setSelectedOpt] = useState(null);
+            const [answers, setAnswers] = useState([]); // Track for final results
+
+            const handleAnswer = (index) => {
+                if (showFeedback) return;
+                setSelectedOpt(index);
+                setShowFeedback(true);
+                
+                const isCorrect = index === questions[currentQ].ans;
+                if (isCorrect) setScore(score + 1);
+                
+                setAnswers([...answers, { q: currentQ, ans: index, correct: isCorrect }]);
+            };
+
+            const nextQuestion = () => {
+                if (currentQ < questions.length - 1) {
+                    setCurrentQ(currentQ + 1);
+                    setShowFeedback(false);
+                    setSelectedOpt(null);
+                } else {
+                    onComplete(score, answers);
+                }
+            };
+
+            const q = questions[currentQ];
+            const isCorrect = selectedOpt === q.ans;
+
+            return (
+                <div className="mt-8 border-t-2 border-dashed border-gray-300 pt-8">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-2xl font-bold font-serif">{isFinal ? 'Tantangan Akhir' : 'Mini Quiz'}</h3>
+                        <span className="bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-sm font-bold">Soal {currentQ + 1} / {questions.length}</span>
+                    </div>
+                    <ProgressBar percent={((currentQ) / questions.length) * 100} colorClass="bg-blue-500" />
+                    
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mt-6">
+                        <p className="text-lg font-semibold mb-6">{q.q}</p>
+                        <div className="space-y-3">
+                            {q.opts.map((opt, i) => {
+                                let btnClass = "w-full text-left p-4 rounded-xl border-2 transition-all ";
+                                if (!showFeedback) {
+                                    btnClass += "border-gray-200 hover:border-hindu-gold hover:bg-yellow-50 dark:hover:bg-yellow-900/20";
+                                } else {
+                                    if (i === q.ans) btnClass += "border-green-500 bg-green-100 dark:bg-green-900/50 text-green-900 dark:text-green-100";
+                                    else if (i === selectedOpt) btnClass += "border-red-500 bg-red-100 dark:bg-red-900/50 text-red-900 dark:text-red-100";
+                                    else btnClass += "border-gray-200 opacity-50";
+                                }
+                                return (
+                                    <button key={i} onClick={() => handleAnswer(i)} disabled={showFeedback} className={btnClass}>
+                                        <span className="font-bold mr-3">{String.fromCharCode(65 + i)}.</span> {opt}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {showFeedback && (
+                            <div className={`mt-6 p-4 rounded-xl animate-fade-in ${isCorrect ? 'bg-green-100 border border-green-300 text-green-900' : 'bg-red-100 border border-red-300 text-red-900'}`}>
+                                <h4 className="font-bold text-xl mb-2">
+                                    {isCorrect ? <><i className="fa-solid fa-circle-check"></i> BENAR!</> : <><i className="fa-solid fa-circle-xmark"></i> BELUM TEPAT</>}
+                                </h4>
+                                {q.feedback && <p>{q.feedback}</p>}
+                                {!isCorrect && isFinal && <p>Jawaban yang tepat: <strong>{q.opts[q.ans]}</strong></p>}
+                                <div className="mt-4 flex justify-end">
+                                    <Button onClick={nextQuestion}>{currentQ === questions.length - 1 ? 'Selesai' : 'Lanjut'}</Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const InteractiveElements = {
+            nyaya: ({ onComplete }) => {
+                const [done, setDone] = useState(false);
+                return (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200">
+                        <h4 className="font-bold text-xl mb-3"><i className="fa-solid fa-magnifying-glass"></i> Case Challenge</h4>
+                        <p className="mb-4 bg-white dark:bg-gray-800 p-4 rounded shadow italic">"Temanmu mengirim informasi viral dan mengatakan bahwa informasi tersebut pasti benar karena sudah dibagikan ribuan orang."</p>
+                        <p className="font-semibold mb-4">Apa tindakan yang paling sesuai dengan prinsip Nyaya?</p>
+                        <div className="space-y-2">
+                            {['Percaya saja karena banyak yang sependapat', 'Langsung debat dan marah-marah', 'Cari sumber asli dan periksa bukti logisnya'].map((opt, i) => (
+                                <button key={i} onClick={() => { if(i===2) { setDone(true); onComplete(); } else alert("Coba pikirkan lagi, ingat prinsip Pratyaksha (pengamatan/bukti).") }} className="block w-full text-left p-3 bg-white dark:bg-gray-700 hover:bg-blue-100 border rounded transition">
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
+                        {done && <p className="mt-4 text-green-600 font-bold">Tepat! Kebenaran tidak ditentukan oleh jumlah orang yang percaya, melainkan oleh bukti dan logika (Pramana).</p>}
+                    </div>
+                );
+            },
+            vaiseshika: ({ onComplete }) => {
+                const [items, setItems] = useState([{id:1, name:'Batu', cat:null}, {id:2, name:'Pikiran', cat:null}, {id:3, name:'Air', cat:null}]);
+                const checkDone = (newItems) => {
+                    if (newItems.every(i => i.cat !== null)) {
+                        // In real Vaiseshika, everything is categorized. Mind (Manas) is a substance. But let's simplify for HS.
+                        // Physical Substance (Dravya) vs Non-Physical/Qualities. Let's just make them categorize physical vs non-physical.
+                        if(newItems[0].cat === 'fisik' && newItems[1].cat === 'nonfisik' && newItems[2].cat === 'fisik'){
+                            onComplete();
+                        }
+                    }
+                }
+                const setCat = (id, cat) => {
+                    const newItems = items.map(i => i.id === id ? {...i, cat} : i);
+                    setItems(newItems);
+                    checkDone(newItems);
+                }
+                return (
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-6 rounded-xl border border-orange-200">
+                        <h4 className="font-bold text-xl mb-3"><i className="fa-solid fa-boxes-stacked"></i> Sorting Lab Sederhana</h4>
+                        <p className="mb-4">Vaiseshika mengategorikan realitas. Kelompokkan entitas berikut menjadi Materi Fisik (Benda) atau Non-Fisik.</p>
+                        <div className="flex gap-4 mb-4">
+                            {items.filter(i=>!i.cat).map(i => (
+                                <div key={i.id} className="p-3 bg-white dark:bg-gray-700 shadow rounded font-bold">{i.name}</div>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="border-2 border-dashed border-gray-400 p-4 min-h-[100px]" onDragOver={e=>e.preventDefault()} onDrop={()=>{}}>
+                                <h5 className="font-bold text-center mb-2">Fisik (Materi)</h5>
+                                {items.filter(i=>i.cat==='fisik').map(i=><div key={i.id} className="p-1 bg-green-200 text-black rounded mb-1 text-center">{i.name}</div>)}
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {items.filter(i=>!i.cat).map(i=><button key={i.id} onClick={()=>setCat(i.id, 'fisik')} className="text-xs bg-gray-200 p-1 rounded">Pindah {i.name}</button>)}
+                                </div>
+                            </div>
+                            <div className="border-2 border-dashed border-gray-400 p-4 min-h-[100px]">
+                                <h5 className="font-bold text-center mb-2">Non-Fisik</h5>
+                                {items.filter(i=>i.cat==='nonfisik').map(i=><div key={i.id} className="p-1 bg-blue-200 text-black rounded mb-1 text-center">{i.name}</div>)}
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {items.filter(i=>!i.cat).map(i=><button key={i.id} onClick={()=>setCat(i.id, 'nonfisik')} className="text-xs bg-gray-200 p-1 rounded">Pindah {i.name}</button>)}
+                                </div>
+                            </div>
+                        </div>
+                        {items.every(i=>i.cat) && <p className="mt-4 text-green-600 font-bold">Mantap! Kemampuan mengelompokkan adalah inti dari analisis Vaiseshika.</p>}
+                    </div>
+                )
+            },
+            samkhya: ({ onComplete }) => {
+                const [done, setDone] = useState(false);
+                return (
+                    <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-xl border border-green-200 text-center">
+                        <h4 className="font-bold text-xl mb-3"><i className="fa-solid fa-yin-yang"></i> Purusa or Prakrti?</h4>
+                        <div className="flex justify-center gap-8 items-center mb-6 text-2xl font-bold">
+                            <div className="text-blue-600">PURUSA<br/><span className="text-sm font-normal">Kesadaran Murni / Pengamat</span></div>
+                            <div>×</div>
+                            <div className="text-green-600">PRAKRTI<br/><span className="text-sm font-normal">Materi / Perubahan</span></div>
+                        </div>
+                        <p className="mb-4">"Rasa marah karena kalah main game." Termasuk apakah ini?</p>
+                        <div className="flex justify-center gap-4">
+                            <Button onClick={() => alert("Kurang tepat. Purusa adalah saksi murni yang tidak terpengaruh emosi.")} variant="outline">Purusa</Button>
+                            <Button onClick={() => { setDone(true); onComplete(); }} variant="outline">Prakrti</Button>
+                        </div>
+                        {done && <p className="mt-4 text-green-600 font-bold">Benar! Emosi adalah sesuatu yang berubah-ubah, karenanya ia adalah materi/alam (Prakrti), bukan kesadaran sejati (Purusa).</p>}
+                    </div>
+                )
+            },
+            yoga: ({ onComplete }) => {
+                const [focus, setFocus] = useState(100);
+                const [playing, setPlaying] = useState(false);
+                const [success, setSuccess] = useState(false);
+                
+                useEffect(() => {
+                    let interval;
+                    if (playing && focus > 0 && !success) {
+                        interval = setInterval(() => setFocus(f => f - 5), 500); // Distractions drain focus
+                    } else if (focus <= 0) {
+                        setPlaying(false);
+                        setFocus(100);
+                        alert("Fokus hilang karena terlalu banyak distraksi! Coba lagi.");
+                    } else if (success) {
+                        setPlaying(false);
+                        onComplete();
+                    }
+                    return () => clearInterval(interval);
+                }, [playing, focus, success]);
+
+                return (
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-xl border border-indigo-200">
+                        <h4 className="font-bold text-xl mb-3"><i className="fa-solid fa-person-praying"></i> Focus Challenge</h4>
+                        <p className="mb-4">Pertahankan konsentrasi. Klik tombol <strong>TARIK NAFAS (Fokus)</strong> untuk melawan distraksi yang muncul menguras energimu.</p>
+                        
+                        {!playing && !success && <Button onClick={() => setPlaying(true)}>Mulai Meditasi</Button>}
+                        
+                        {playing && (
+                            <div className="space-y-4">
+                                <ProgressBar percent={focus} colorClass="bg-indigo-500" />
+                                <div className="text-center animate-pulse text-red-500 font-bold">📱 NOTIFIKASI GAME MASUK! 💬 CHAT BARU!</div>
+                                <div className="flex justify-center">
+                                    <button onClick={() => {
+                                        setFocus(f => Math.min(100, f + 15));
+                                        if(focus > 90) setSuccess(true);
+                                    }} className="w-32 h-32 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-xl shadow-[0_0_20px_rgba(79,70,229,0.5)] transform active:scale-90 transition-transform">
+                                        TARIK<br/>NAFAS
+                                    </button>
+                                </div>
+                                <p className="text-center text-sm mt-2">Klik berkali-kali untuk mengembalikan fokus hingga penuh!</p>
+                            </div>
+                        )}
+                        {success && <p className="mt-4 text-green-600 font-bold text-center">Luar biasa! Kamu berhasil mengendalikan pikiran (Citta Vrtti Nirodha).</p>}
+                    </div>
+                )
+            },
+            mimamsa: ({ onComplete }) => {
+                const [done, setDone] = useState(false);
+                return (
+                    <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-200">
+                        <h4 className="font-bold text-xl mb-3"><i className="fa-solid fa-scale-unbalanced"></i> Decision Game</h4>
+                        <p className="mb-4 italic">"Besok ujian penting. Tiba-tiba teman dekat mengajak main bareng online sampai larut malam."</p>
+                        <div className="space-y-2">
+                            <Button onClick={() => alert("Mimamsa menekankan pelaksanaan Dharma (Kewajiban). Bermain bukan kewajiban utamamu saat ini.")} className="w-full" variant="outline">Ikut main agar teman tidak marah</Button>
+                            <Button onClick={() => { setDone(true); onComplete(); }} className="w-full" variant="outline">Menolak halus dan tetap belajar karena itu adalah kewajiban siswa</Button>
+                        </div>
+                        {done && <p className="mt-4 text-green-600 font-bold">Tepat! Mimamsa mengajarkan kita untuk mengutamakan pelaksanaan kewajiban (Dharma) sesuai peran kita di kehidupan nyata.</p>}
+                    </div>
+                )
+            },
+            vedanta: ({ onComplete }) => {
+                const [step, setStep] = useState(0);
+                const thoughts = [
+                    "Siapakah aku? Apakah aku hanya nama ini?",
+                    "Tubuhku terus menua dan berubah, tapi rasa 'aku' tetap sama.",
+                    "Pikiranku meloncat-loncat, tapi ada 'sesuatu' yang mengamati pikiran itu diam-diam.",
+                    "Mungkin inti diriku (Atman) adalah bagian dari kesadaran semesta yang tak terbatas (Brahman)."
+                ];
+                return (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-xl border border-yellow-200 text-center">
+                        <h4 className="font-bold text-xl mb-3"><i className="fa-solid fa-om"></i> "Who Am I?"</h4>
+                        <p className="mb-6">Klik untuk melakukan refleksi ke dalam diri secara perlahan.</p>
+                        <div className="min-h-[100px] flex items-center justify-center italic text-lg mb-6 font-serif">
+                            "{thoughts[step]}"
+                        </div>
+                        {step < thoughts.length - 1 ? (
+                            <Button onClick={() => setStep(step + 1)}>Renungkan Lebih Dalam...</Button>
+                        ) : (
+                            <Button variant="primary" onClick={() => { onComplete(); alert("Eksplorasi Vedanta selesai. Pemahaman sejati butuh perenungan seumur hidup."); }}>Selesai Refleksi</Button>
+                        )}
+                    </div>
+                )
+            }
+        };
+
+        const PathTemplate = ({ pathId, state, updateState, setView, triggerToast }) => {
+            const data = darsanaData[pathId];
+            const hasQuizScore = state.miniQuizScores[pathId] !== undefined;
+            const [interactiveDone, setInteractiveDone] = useState(false);
+            const InteractiveComponent = InteractiveElements[pathId];
+
+            // Auto-complete intro material reading
+            useEffect(() => {
+                // Award 20 XP just for opening (only once managed by state logic)
+            }, []);
+
+            const handleQuizComplete = (score) => {
+                const isNewCompletion = !state.completedPaths.includes(pathId);
+                let addedXP = 0;
+                
+                // Base quiz XP
+                addedXP += score * 20; 
+
+                // Completion bonus
+                if (isNewCompletion) {
+                    addedXP += 100;
+                    triggerToast(`Badge Terbuka! +100 XP`, 'success');
+                } else {
+                    triggerToast(`Kuis Selesai! +${score * 20} XP`, 'xp');
+                }
+
+                updateState({
+                    xp: state.xp + addedXP,
+                    completedPaths: isNewCompletion ? [...state.completedPaths, pathId] : state.completedPaths,
+                    miniQuizScores: { ...state.miniQuizScores, [pathId]: score },
+                    badges: isNewCompletion ? [...state.badges, pathId] : state.badges
+                });
+            };
+
+            const handleInteractiveComplete = () => {
+                if (!interactiveDone) {
+                    setInteractiveDone(true);
+                    updateState({ xp: state.xp + 30 });
+                    triggerToast("Aktivitas Selesai! +30 XP", "xp");
+                }
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 md:p-6 my-4 w-full animate-fade-in pb-20">
+                    <Button variant="outline" onClick={() => setView('MAP')} className="mb-6 border-none px-0 hover:bg-transparent">
+                        <i className="fa-solid fa-arrow-left"></i> Kembali ke Peta
+                    </Button>
+                    
+                    <Card className={`border-t-8 ${data.color.replace('bg-', 'border-')}`}>
+                        <div className="flex flex-col md:flex-row gap-6 items-start">
+                            <div className={`w-24 h-24 rounded-2xl flex items-center justify-center text-4xl text-white shadow-lg shrink-0 ${data.color}`}>
+                                <i className={`fa-solid ${data.icon}`}></i>
+                            </div>
+                            <div>
+                                <h1 className="text-4xl font-serif font-bold uppercase tracking-wider">{data.title}</h1>
+                                <p className="text-xl italic text-gray-600 dark:text-gray-400 mt-1">{data.subtitle}</p>
+                                <div className="mt-4 inline-block bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded font-semibold text-sm">
+                                    <i className="fa-solid fa-user-pen mr-2"></i> Tokoh: {data.sage}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 space-y-6 text-lg leading-relaxed">
+                            <section>
+                                <h3 className="text-2xl font-bold border-b-2 border-gray-200 dark:border-gray-700 pb-2 mb-4">Intisari Ajaran</h3>
+                                <p>{data.desc}</p>
+                            </section>
+
+                            <section className="bg-yellow-50 dark:bg-yellow-900/10 p-5 rounded-xl border border-yellow-200">
+                                <h3 className="text-xl font-bold mb-2 text-yellow-800 dark:text-yellow-400"><i className="fa-solid fa-lightbulb"></i> Penerapan Modern</h3>
+                                <p>{data.application}</p>
+                            </section>
+
+                            <section className="mt-8">
+                                <h3 className="text-2xl font-bold border-b-2 border-gray-200 dark:border-gray-700 pb-2 mb-4">Aktivitas Interaktif</h3>
+                                <InteractiveComponent onComplete={handleInteractiveComplete} />
+                            </section>
+                        </div>
+
+                        {!hasQuizScore ? (
+                            <QuizEngine questions={data.quiz} onComplete={handleQuizComplete} />
+                        ) : (
+                            <div className="mt-10 p-6 bg-green-50 dark:bg-green-900/20 rounded-xl text-center border-2 border-green-500">
+                                <i className="fa-solid fa-circle-check text-5xl text-green-500 mb-4 animate-bounce"></i>
+                                <h3 className="text-2xl font-bold text-green-800 dark:text-green-300">Gerbang {data.title} Telah Dikuasai!</h3>
+                                <p className="mt-2">Skor Kuis Mini: {state.miniQuizScores[pathId]} / {data.quiz.length}</p>
+                                <Button onClick={() => setView('MAP')} className="mt-4">Lanjutkan Perjalanan</Button>
+                            </div>
+                        )}
+                    </Card>
+                </div>
+            );
+        };
+
+        const ResultsView = ({ state, setView }) => {
+            const allComplete = PATH_IDS.every(id => state.completedPaths.includes(id)) && state.finalQuestScore !== null;
+            
+            if (!allComplete) {
+                return (
+                    <div className="flex-grow flex items-center justify-center p-6 text-center">
+                        <Card>
+                            <i className="fa-solid fa-hourglass-half text-6xl text-gray-400 mb-4"></i>
+                            <h2 className="text-2xl font-bold mb-2">Perjalanan Belum Selesai</h2>
+                            <p>Selesaikan seluruh gerbang dan Final Quest untuk melihat hasil akhirmu.</p>
+                            <Button onClick={() => setView('MAP')} className="mt-6">Kembali ke Peta</Button>
+                        </Card>
+                    </div>
+                );
+            }
+
+            // Calculate Grade
+            const totalQuestions = finalQuestData.length;
+            const percentage = Math.round((state.finalQuestScore / totalQuestions) * 100);
+            let title = "", icon = "", desc = "";
+
+            if (percentage >= 90) { title = "SAD DARSANA MASTER"; icon = "fa-crown text-yellow-500"; desc = "Luar biasa! Pemahamanmu nyaris sempurna. Terapkan kebijaksanaan ini untuk membimbing langkahmu."; }
+            else if (percentage >= 80) { title = "DARSANA EXPLORER"; icon = "fa-star text-blue-500"; desc = "Hebat! Kamu telah menggenggam konsep-konsep kunci dengan baik."; }
+            else if (percentage >= 70) { title = "WISDOM SEEKER"; icon = "fa-compass text-green-500"; desc = "Kerja bagus. Kamu sudah memahami dasar-dasar melihat dunia dengan perspektif yang lebih luas."; }
+            else { title = "BEGINNER EXPLORER"; icon = "fa-seedling text-green-400"; desc = "Sebuah permulaan yang baik. Filsafat memang butuh waktu untuk dipahami sepenuhnya."; }
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 md:p-6 my-4 w-full animate-slide-up">
+                    <Card className="text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-hindu-maroon via-hindu-gold to-hindu-green"></div>
+                        <h1 className="text-4xl font-serif font-bold mb-2 mt-4">🏆 Hasil Perjalanan</h1>
+                        <p className="text-gray-600 mb-8">Ini adalah bukti pencapaian pemahamanmu.</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-inner">
+                                <div className="text-gray-500 text-sm font-bold uppercase mb-1">Total XP</div>
+                                <div className="text-4xl font-bold text-hindu-gold"><i className="fa-solid fa-brain text-2xl"></i> {state.xp}</div>
+                            </div>
+                            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-inner">
+                                <div className="text-gray-500 text-sm font-bold uppercase mb-1">Akurasi Final Quest</div>
+                                <div className="text-4xl font-bold">{percentage}%</div>
+                                <div className="text-sm mt-1 text-green-600">{state.finalQuestScore} Benar / {totalQuestions - state.finalQuestScore} Salah</div>
+                            </div>
+                            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-inner md:col-span-1">
+                                <div className="text-gray-500 text-sm font-bold uppercase mb-1">Gelar Pencapaian</div>
+                                <div className="text-xl font-bold flex flex-col items-center gap-2 mt-2">
+                                    <i className={`fa-solid ${icon} text-4xl`}></i>
+                                    {title}
+                                </div>
+                            </div>
+                        </div>
+
+                        <p className="italic text-lg mb-8 max-w-2xl mx-auto border-l-4 border-hindu-gold pl-4 text-left">
+                            "{desc} Perjalanan pengetahuan sejati baru saja dimulai ketika kamu menerapkannya di dunia nyata."
+                        </p>
+
+                        <div className="mb-10">
+                            <h3 className="text-2xl font-bold mb-4 border-b pb-2">Koleksi Badge</h3>
+                            <div className="flex flex-wrap justify-center gap-4">
+                                {PATH_IDS.map(id => (
+                                    <Badge key={id} title={darsanaData[id].title} icon={darsanaData[id].icon} earned={true} color={darsanaData[id].color.replace('bg-', 'text-').replace('-900', '-600')} />
+                                ))}
+                                <Badge title="Final Quest" icon="fa-khanda" earned={true} color="text-hindu-maroon" />
+                            </div>
+                        </div>
+
+                        <Button onClick={() => setView('REFLECTION')} variant="primary" className="w-full md:w-auto text-lg py-4 px-8 mx-auto">
+                            <i className="fa-solid fa-pen-fancy"></i> Lanjut ke Jurnal Refleksi
+                        </Button>
+                    </Card>
+                </div>
+            );
+        };
+
+        const ReflectionView = ({ state, updateState, setView, triggerToast }) => {
+            const [refData, setRefData] = useState(state.reflection || { before: "", after: "", action: "" });
+            const [saved, setSaved] = useState(!!state.reflection);
+
+            const handleSave = () => {
+                if (refData.before && refData.after && refData.action) {
+                    updateState({ reflection: refData });
+                    if (!saved) updateState({ xp: state.xp + 50 }); // Bonus XP
+                    setSaved(true);
+                    triggerToast("Refleksi tersimpan! Penjalananmu lengkap.", "success");
+                    setTimeout(() => setView('SUMMARY'), 2000);
+                } else {
+                    alert("Mohon isi semua kolom refleksi sebelum menyimpan.");
+                }
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto p-4 md:p-6 w-full animate-fade-in">
+                    <Card>
+                        <h2 className="text-3xl font-serif font-bold text-center mb-6"><i className="fa-solid fa-book-open"></i> Jurnal Refleksi</h2>
+                        <p className="text-center mb-8">Renungkan apa yang telah kamu pelajari. Pengetahuan tanpa perenungan hanya akan menjadi ingatan sementara.</p>
+                        
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block font-bold mb-2 uppercase text-sm text-gray-500">1. Before</label>
+                                <p className="mb-2 font-medium">Apa yang kamu pikirkan tentang Darsana atau filsafat Hindu sebelum mempelajarinya melalui KUACI?</p>
+                                <textarea className="w-full p-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-black/20 focus:ring-2 focus:ring-hindu-gold outline-none min-h-[100px]" 
+                                    value={refData.before} onChange={e => setRefData({...refData, before: e.target.value})} disabled={saved}></textarea>
+                            </div>
+                            <div>
+                                <label className="block font-bold mb-2 uppercase text-sm text-gray-500">2. After</label>
+                                <p className="mb-2 font-medium">Apa pemahaman baru atau hal paling menarik yang kamu dapatkan setelah menjelajahi keenam gerbang?</p>
+                                <textarea className="w-full p-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-black/20 focus:ring-2 focus:ring-hindu-gold outline-none min-h-[100px]" 
+                                    value={refData.after} onChange={e => setRefData({...refData, after: e.target.value})} disabled={saved}></textarea>
+                            </div>
+                            <div>
+                                <label className="block font-bold mb-2 uppercase text-sm text-gray-500">3. Action</label>
+                                <p className="mb-2 font-medium">Nilai dari Darsana mana yang paling ingin kamu terapkan dalam kehidupan sehari-hari (misal saat sekolah/bergaul)?</p>
+                                <textarea className="w-full p-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-black/20 focus:ring-2 focus:ring-hindu-gold outline-none min-h-[100px]" 
+                                    value={refData.action} onChange={e => setRefData({...refData, action: e.target.value})} disabled={saved}></textarea>
+                            </div>
+                        </div>
+
+                        {!saved ? (
+                            <Button onClick={handleSave} className="w-full mt-8"><i className="fa-solid fa-save"></i> SIMPAN REFLEKSI (+50 XP)</Button>
+                        ) : (
+                            <div className="mt-8 p-4 bg-green-100 text-green-800 rounded-xl text-center font-bold">
+                                Refleksimu telah tercatat. Perjalanan pengetahuan tidak berhenti di sini.
+                                <br/><Button onClick={() => setView('SUMMARY')} variant="outline" className="mt-4">Lihat Kesimpulan</Button>
+                            </div>
+                        )}
+                    </Card>
+                </div>
+            );
+        };
+
+        const SummaryView = () => (
+            <div className="max-w-4xl mx-auto p-4 md:p-6 w-full animate-slide-up">
+                <Card>
+                    <h2 className="text-3xl font-serif font-bold text-center mb-6 border-b pb-4">ENAM JALAN. SATU TUJUAN.</h2>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-hindu-maroon text-white">
+                                    <th className="p-3 rounded-tl-lg">Darsana</th>
+                                    <th className="p-3 rounded-tr-lg">Inti Fokus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b dark:border-gray-700 hover:bg-black/5">
+                                    <td className="p-3 font-bold"><i className="fa-solid fa-scale-balanced mr-2 text-blue-500"></i> Nyaya</td>
+                                    <td className="p-3">Logika, penalaran, dan pencarian pengetahuan yang benar (valid).</td>
+                                </tr>
+                                <tr className="border-b dark:border-gray-700 hover:bg-black/5">
+                                    <td className="p-3 font-bold"><i className="fa-solid fa-atom mr-2 text-orange-500"></i> Vaiseshika</td>
+                                    <td className="p-3">Analisis realitas objektif dan kategorisasi unsur-unsur alam.</td>
+                                </tr>
+                                <tr className="border-b dark:border-gray-700 hover:bg-black/5">
+                                    <td className="p-3 font-bold"><i className="fa-solid fa-leaf mr-2 text-green-500"></i> Samkhya</td>
+                                    <td className="p-3">Pemahaman perbedaan mutlak antara Kesadaran (Purusa) dan Materi/Alam (Prakrti).</td>
+                                </tr>
+                                <tr className="border-b dark:border-gray-700 hover:bg-black/5">
+                                    <td className="p-3 font-bold"><i className="fa-solid fa-person-praying mr-2 text-indigo-500"></i> Yoga</td>
+                                    <td className="p-3">Disiplin praktis, meditasi, dan pengendalian modifikasi pikiran.</td>
+                                </tr>
+                                <tr className="border-b dark:border-gray-700 hover:bg-black/5">
+                                    <td className="p-3 font-bold"><i className="fa-solid fa-fire-flame-curved mr-2 text-red-500"></i> Mimamsa</td>
+                                    <td className="p-3">Pemahaman teks Weda untuk pelaksanaan Kewajiban (Dharma) dan ritual.</td>
+                                </tr>
+                                <tr className="hover:bg-black/5">
+                                    <td className="p-3 font-bold rounded-bl-lg"><i className="fa-solid fa-om mr-2 text-yellow-500"></i> Vedanta</td>
+                                    <td className="p-3 rounded-br-lg">Pencarian realitas tertinggi (Brahman) dan penyatuan Diri (Atman).</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="mt-8 p-6 bg-parchment-dark dark:bg-gray-800 rounded-xl border-l-4 border-hindu-gold italic">
+                        <p>
+                            Keenam Darsana memberikan perspektif yang berbeda dalam memahami realitas, pengetahuan, tindakan, diri, dan tujuan kehidupan. 
+                            Mempelajari Darsana bukan hanya tentang menghafal nama dan konsep, tetapi juga belajar <strong>berpikir kritis (Nyaya), menganalisis dunia (Vaiseshika), membedakan yang esensial (Samkhya), mengendalikan diri (Yoga), menjalankan kewajiban (Mimamsa), dan merefleksikan tujuan akhir kehidupan (Vedanta)</strong>.
+                        </p>
+                    </div>
+                </Card>
+            </div>
+        );
+
+        const App = () => {
+            // Initial State setup mapping from LocalStorage or Defaults
+            const getInitialState = () => {
+                const saved = localStorage.getItem('kuaci_state');
+                if (saved) return JSON.parse(saved);
+                return {
+                    xp: 0,
+                    completedPaths: [], // array of pathIds
+                    badges: [],
+                    miniQuizScores: {},
+                    finalQuestScore: null,
+                    reflection: null,
+                    hasCompletedIntro: false,
+                    hasCompletedAstika: false
+                };
+            };
+
+            const [state, setState] = useState(getInitialState());
+            const [view, setView] = useState('HOME');
+            const [darkMode, setDarkMode] = useState(false);
+            const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+            // Persist state to LocalStorage
+            useEffect(() => {
+                localStorage.setItem('kuaci_state', JSON.stringify(state));
+            }, [state]);
+
+            // Dark mode setup
+            useEffect(() => {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    setDarkMode(true);
+                }
+            }, []);
+
+            useEffect(() => {
+                if (darkMode) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            }, [darkMode]);
+
+            const triggerToast = (message, type = 'info') => {
+                setToast({ show: true, message, type });
+                setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
+            };
+
+            const updateState = (updates) => {
+                setState(prev => ({ ...prev, ...updates }));
+            };
+
+            const handleReset = () => {
+                if(confirm("Apakah kamu yakin ingin mereset seluruh progress perjalananmu?")) {
+                    localStorage.removeItem('kuaci_state');
+                    setState(getInitialState());
+                    setView('HOME');
+                }
+            };
+
+            // Calculate overall progress (Intro + Astika + 6 Paths + Final + Reflection = 10 items)
+            let progressItems = 0;
+            if (state.hasCompletedIntro) progressItems++;
+            if (state.hasCompletedAstika) progressItems++;
+            progressItems += state.completedPaths.length;
+            if (state.finalQuestScore !== null) progressItems++;
+            if (state.reflection) progressItems++;
+            const totalProgress = (progressItems / 10) * 100;
+
+            // View Router Logic
+            const renderView = () => {
+                if (view.startsWith('PATH_')) {
+                    const pathId = view.replace('PATH_', '').toLowerCase();
+                    return <PathTemplate pathId={pathId} state={state} updateState={updateState} setView={setView} triggerToast={triggerToast} />;
+                }
+
+                switch (view) {
+                    case 'HOME': return <HomeView setView={setView} />;
+                    case 'ABOUT': return (
+                        <InfoPage title="Tentang KUACI" icon="fa-users" onNext={() => setView('HOME')} nextLabel="Kembali">
+                            <p>Media Pembelajaran Interaktif ini dibuat oleh:</p>
+                            <div className="bg-white/50 dark:bg-black/20 p-4 rounded-xl border border-gray-300 dark:border-gray-600 mt-4">
+                                <strong>Kelompok MPI KUACI</strong><br/>
+                                <strong>Daftar Anggota Kelompok:</strong>
+                                <ol className="list-decimal ml-6 mt-2 mb-4 space-y-1">
+                                    <li>Anak Agung Gede Panji Pradnyana</li>
+                                    <li>Anak Agung Istri Intan Widyaswari</li>
+                                    <li>Gde Aswin Abinaya Adhi</li>
+                                    <li>I Dewa Agung Gede Mahesa Dewayana</li>
+                                    <li>Kadek Ayu Widhiani Putri</li>
+                                    <li>Komang Ayu Tria Pradnyadari</li>
+                                    <li>Ni Putu Anggi Damayanti</li>
+                                    <li>Putu Narendra Adisura Prabawa</li>
+                                </ol>
+                                <strong>Kelas:</strong> XI A<br/>
+                                <strong>Sekolah:</strong> SMA Negeri 1 Gianyar<br/>
+                                <strong>Mata Pelajaran:</strong> Pendidikan Agama Hindu dan Budi Pekerti
+                            </div>
+                        </InfoPage>
+                    );
+                    case 'INSTRUCTIONS': return (
+                        <InfoPage title="Cara Bermain" icon="fa-gamepad" onNext={() => setView('OBJECTIVES')}>
+                            <ol className="space-y-4 list-decimal list-inside font-medium">
+                                <li className="pl-2"><strong>JELAJAHI:</strong> Pelajari pengertian dasar Darsana.</li>
+                                <li className="pl-2"><strong>BUKA GERBANG:</strong> Masuki Peta Utama dan pilih enam aliran filsafat.</li>
+                                <li className="pl-2"><strong>PELAJARI & UJI:</strong> Baca materi dan kerjakan mini quiz (Tantangan) di setiap aliran.</li>
+                                <li className="pl-2"><strong>KUMPULKAN XP:</strong> Jawaban benar dan interaksi akan memberikanmu Experience Points (XP).</li>
+                                <li className="pl-2"><strong>FINAL QUEST:</strong> Setelah keenam gerbang selesai, hadapi studi kasus gabungan.</li>
+                                <li className="pl-2"><strong>REFLEKSI:</strong> Renungkan nilainya untuk kehidupan nyatamu.</li>
+                            </ol>
+                        </InfoPage>
+                    );
+                    case 'OBJECTIVES': return (
+                        <InfoPage title="Tujuan Pembelajaran" icon="fa-bullseye" onNext={() => setView('DARSANA_INTRO')} nextLabel="Mulai Membaca Materi">
+                            <p>Setelah menyelesaikan perjalanan ini, Penjelajah diharapkan mampu:</p>
+                            <ul className="list-disc ml-6 mt-4 space-y-2">
+                                <li>Menjelaskan pengertian Darsana secara umum.</li>
+                                <li>Memahami pembagian Astika dan Nastika.</li>
+                                <li>Mengidentifikasi karakteristik Nyaya, Vaiseshika, Samkhya, Yoga, Mimamsa, dan Vedanta.</li>
+                                <li>Menganalisis studi kasus sederhana menggunakan perspektif Sad Darsana.</li>
+                                <li>Merefleksikan nilai-nilai ajaran tersebut dalam memecahkan masalah kehidupan sehari-hari (seperti mengelola informasi, emosi, dan kewajiban).</li>
+                            </ul>
+                        </InfoPage>
+                    );
+                    case 'DARSANA_INTRO': return (
+                        <InfoPage title="Apa itu Darsana?" icon="fa-eye" onNext={() => {
+                            if(!state.hasCompletedIntro) { updateState({hasCompletedIntro: true, xp: state.xp + 20}); triggerToast('+20 XP (Materi Dasar)', 'xp'); }
+                            setView('ASTIKA_NASTIKA');
+                        }}>
+                            <p>Darsana merupakan istilah yang digunakan untuk menyebut sistem pemikiran atau filsafat yang berusaha memahami hakikat kehidupan, pengetahuan, kebenaran, dan tujuan manusia.</p>
+                            <p className="mt-4">Kata Darsana berakar dari bahasa Sanskerta yang berkaitan dengan makna <strong>"melihat"</strong> atau <strong>"pandangan"</strong>.</p>
+                            <div className="bg-hindu-gold/20 p-4 rounded-xl mt-4 border-l-4 border-hindu-gold">
+                                <p>Dalam konteks filsafat Hindu, Darsana bukanlah sekadar teori abstrak, melainkan <strong>cara pandang terhadap realitas</strong> yang bertujuan membantu manusia mengarahkan hidup menuju pencerahan atau tujuan yang lebih tinggi.</p>
+                            </div>
+                        </InfoPage>
+                    );
+                    case 'ASTIKA_NASTIKA': return (
+                        <InfoPage title="Astika × Nastika" icon="fa-code-branch" onNext={state.hasCompletedAstika ? () => setView('MAP') : undefined} nextLabel="Masuk ke Peta">
+                            <p>Dalam tradisi filsafat India, aliran-aliran pemikiran secara garis besar dibagi menjadi dua kubu utama berdasarkan pengakuan mereka terhadap otoritas kitab suci Weda.</p>
+                            <div className="grid md:grid-cols-2 gap-4 mt-6 text-center">
+                                <div className="p-4 border-2 border-green-500 rounded-xl bg-green-50 dark:bg-green-900/10">
+                                    <h3 className="font-bold text-xl text-green-700 dark:text-green-400 mb-2">ASTIKA</h3>
+                                    <p className="text-sm">Sistem yang <strong>menerima</strong> dan mengakui otoritas Weda sebagai kebenaran mutlak.</p>
+                                </div>
+                                <div className="p-4 border-2 border-red-500 rounded-xl bg-red-50 dark:bg-red-900/10">
+                                    <h3 className="font-bold text-xl text-red-700 dark:text-red-400 mb-2">NASTIKA</h3>
+                                    <p className="text-sm">Sistem yang <strong>menolak</strong> otoritas Weda (contoh: Carvaka, Buddhisme, Jainisme).</p>
+                                </div>
+                            </div>
+                            
+                            {!state.hasCompletedAstika ? (
+                                <AstikaNastikaGame onComplete={() => {
+                                    updateState({hasCompletedAstika: true, xp: state.xp + 30});
+                                    triggerToast('+30 XP (Mini Game Terselesaikan)', 'xp');
+                                }} />
+                            ) : (
+                                <div className="mt-6 p-4 bg-green-100 text-green-800 text-center font-bold rounded">
+                                    Kamu telah memahami bahwa Sad Darsana adalah kelompok ASTIKA.
+                                </div>
+                            )}
+                        </InfoPage>
+                    );
+                    case 'MAP': return <MapView progress={totalProgress} setView={setView} state={state} />;
+                    
+                    case 'FINAL_QUEST': 
+                        if (state.finalQuestScore !== null) {
+                            return (
+                                <div className="flex-grow flex items-center justify-center">
+                                    <Card className="text-center">
+                                        <h2 className="text-2xl font-bold mb-4">Final Quest Telah Diselesaikan</h2>
+                                        <p>Skor kamu: {state.finalQuestScore} / {finalQuestData.length}</p>
+                                        <Button onClick={() => setView('RESULTS')} className="mt-4">Lihat Hasil Akhir</Button>
+                                    </Card>
+                                </div>
+                            );
+                        }
+                        return (
+                        <div className="max-w-4xl mx-auto p-4 md:p-6 my-4 w-full animate-fade-in">
+                            <Card className="border-t-8 border-hindu-maroon">
+                                <div className="text-center mb-8">
+                                    <h1 className="text-4xl font-serif font-bold text-hindu-maroon dark:text-hindu-gold">⚔️ THE SIX PERSPECTIVES</h1>
+                                    <p className="mt-2 italic">Ujian Pemahaman Komprehensif</p>
+                                </div>
+                                <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl mb-8 font-serif leading-relaxed text-lg shadow-inner">
+                                    <strong>STUDI KASUS:</strong><br/>
+                                    <p className="mt-2">Seorang siswa mendapatkan informasi viral mengenai kesehatan dari grup chat dan langsung mempercayainya tanpa memeriksa sumber. Setelah ia membagikannya ke medsos, ia mendapat banyak komentar negatif. Ia menjadi emosional, kehilangan konsentrasi belajar, dan akhirnya mengabaikan tugas sekolah esok harinya. Di sela kekacauan itu, ia merenung mempertanyakan apa sebenarnya tujuan tindakannya.</p>
+                                </div>
+                                <QuizEngine isFinal={true} questions={finalQuestData} onComplete={(score) => {
+                                    updateState({ finalQuestScore: score, xp: state.xp + (score * 50) });
+                                    triggerToast(`Final Quest Selesai! +${score*50} XP`, 'success');
+                                    setTimeout(() => setView('RESULTS'), 1500);
+                                }} />
+                            </Card>
+                        </div>
+                    );
+                    
+                    case 'RESULTS': return <ResultsView state={state} setView={setView} />;
+                    case 'REFLECTION': return <ReflectionView state={state} updateState={updateState} setView={setView} triggerToast={triggerToast} />;
+                    case 'SUMMARY': return <SummaryView />;
+                    
+                    default: return <HomeView setView={setView} />;
+                }
+            };
+
+            return (
+                <div className="flex flex-col min-h-screen">
+                    <Toast {...toast} />
+                    <Navbar setView={setView} xp={state.xp} darkMode={darkMode} toggleDarkMode={() => setDarkMode(!darkMode)} />
+                    
+                    <main className="flex-grow flex flex-col items-center">
+                        {renderView()}
+                    </main>
+
+                    <footer className="mt-auto py-6 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500 glass-card rounded-none">
+                        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <p>© 2026 KUACI - MPI Sad Darsana. Dibuat untuk Tujuan Pendidikan.</p>
+                            <div className="flex gap-4">
+                                <button onClick={() => alert("Sumber Referensi Utama:\n1. Titib, I Made. (1996). Veda Sabda Suci Pedoman Praktis Kehidupan.\n2. Donder, I Wayan. (2007). Kosmologi Hindu.\n3. Radhakrishnan, S. (1989). Indian Philosophy.")} className="hover:text-hindu-gold underline">📚 Daftar Sumber</button>
+                                <button onClick={handleReset} className="hover:text-red-500 underline">🔄 Reset Progress</button>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
